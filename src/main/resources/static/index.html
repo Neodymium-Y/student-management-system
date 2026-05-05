@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Student Management</title>
+
+```
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fa;
+        margin: 0;
+        padding: 20px;
+    }
+
+    h2, h3 {
+        color: #333;
+    }
+
+    input {
+        padding: 10px;
+        margin: 5px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        width: 180px;
+    }
+
+    button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        margin: 5px;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    .card {
+        background: white;
+        padding: 15px;
+        margin-top: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .delete {
+        background-color: #dc3545;
+    }
+
+    .edit {
+        background-color: #28a745;
+    }
+
+    .delete:hover {
+        background-color: #a71d2a;
+    }
+
+    .edit:hover {
+        background-color: #1e7e34;
+    }
+</style>
+```
+
+</head>
+
+<body>
+
+<h2>Add Student</h2>
+
+<input id="name" placeholder="Name">
+<input id="rollNo" placeholder="Roll No">
+<input id="course" placeholder="Course">
+<input id="marks" placeholder="Marks">
+
+<button onclick="addStudent()">Add</button>
+
+<hr>
+
+<h2>Students</h2>
+<button onclick="loadStudents()">Refresh</button>
+
+<h3>Search Student</h3>
+<input type="text" id="searchBox" placeholder="Search by name..." onkeyup="searchStudent()">
+
+<div id="list"></div>
+
+<script>
+
+let currentId = null;
+
+// ADD / UPDATE
+function addStudent() {
+    let url = "http://localhost:8080/students";
+    let method = "POST";
+
+    if (currentId) {
+        url = `http://localhost:8080/students/${currentId}`;
+        method = "PUT";
+    }
+
+    fetch(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: document.getElementById("name").value,
+            rollNo: document.getElementById("rollNo").value,
+            course: document.getElementById("course").value,
+            marks: document.getElementById("marks").value
+        })
+    }).then(() => {
+        currentId = null;
+        clearForm();
+        loadStudents();
+    });
+}
+
+// LOAD ALL
+function loadStudents() {
+    fetch("http://localhost:8080/students")
+        .then(res => res.json())
+        .then(data => display(data));
+}
+
+// DISPLAY
+function display(data) {
+    let list = document.getElementById("list");
+    list.innerHTML = "";
+
+    data.forEach(s => {
+        list.innerHTML += `
+            <div class="card">
+                <b>${s.name}</b> (${s.marks})<br>
+                Roll No: ${s.rollNo} <br>
+                Course: ${s.course} <br>
+
+                <button class="delete" onclick="deleteStudent(${s.id})">Delete</button>
+                <button class="edit" onclick="editStudent(${s.id}, '${s.name}', '${s.rollNo}', '${s.course}', ${s.marks})">Edit</button>
+            </div>
+        `;
+    });
+}
+
+// DELETE
+function deleteStudent(id) {
+    fetch(`http://localhost:8080/students/${id}`, {
+        method: "DELETE"
+    }).then(() => loadStudents());
+}
+
+// EDIT
+function editStudent(id, name, rollNo, course, marks) {
+    document.getElementById("name").value = name;
+    document.getElementById("rollNo").value = rollNo;
+    document.getElementById("course").value = course;
+    document.getElementById("marks").value = marks;
+
+    currentId = id;
+}
+
+// SEARCH
+function searchStudent() {
+    let name = document.getElementById("searchBox").value;
+
+    if (name === "") {
+        loadStudents();
+        return;
+    }
+
+    fetch("http://localhost:8080/students/search?name=" + name)
+        .then(res => res.json())
+        .then(data => display(data));
+}
+
+// CLEAR FORM
+function clearForm() {
+    document.getElementById("name").value = "";
+    document.getElementById("rollNo").value = "";
+    document.getElementById("course").value = "";
+    document.getElementById("marks").value = "";
+}
+
+// AUTO LOAD
+loadStudents();
+
+</script>
+
+</body>
+</html>
